@@ -127,6 +127,14 @@ msgstr "裝置清單"
 msgid "Disable Firewall Configuration"
 msgstr "停用防火牆設定"
 
+#: applications/luci-app-tailscale-community/htdocs/luci-static/resources/view/tailscale.js:27
+msgid "Disable MagicDNS"
+msgstr "禁用 MagicDNS"
+
+#: applications/luci-app-tailscale-community/htdocs/luci-static/resources/view/tailscale.js:27
+msgid "Use system DNS instead of MagicDNS."
+msgstr "使用系统 DNS 而不是 MagicDNS。"
+
 #: applications/luci-app-tailscale-community/htdocs/luci-static/resources/view/tailscale.js:25
 msgid "Disable SNAT"
 msgstr "停用 SNAT"
