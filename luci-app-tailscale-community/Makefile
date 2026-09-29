@@ -1,10 +1,10 @@
 include $(TOPDIR)/rules.mk
 
-LUCI_TITLE:=LuCI support for Tailscale
-LUCI_URL:=https://github.com/tokisaki-galaxy/luci-app-tailscale-community
-PKG_DESCRIPTION:=Provides a LuCI Web management interface for Tailscale, allowing viewing status, configuring nodes and daemons.
+PKG_NAME:=luci-app-tailscale-community
 PKG_MAINTAINER:=Tokisaki-Galaxy <moebest@outlook.jp>
-LUCI_DEPENDS:=+tailscale +ip-full +luci-base
+
+LUCI_TITLE:=LuCI support for Tailscale
+LUCI_DEPENDS:=+luci-compat +ip-full +tailscale
 LUCI_PKGARCH:=all
 
 include $(TOPDIR)/feeds/luci/luci.mk
