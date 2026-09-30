@@ -45,17 +45,14 @@ end
 
 local methods = {}
 
--- -------------------------------------------------------------------
--- 1. get_status
--- -------------------------------------------------------------------
 methods.get_status = function()
 	local data = {
 		status = "",
 		version = "",
-		TUNMode = "",
+		TUNMode = false,
 		health = "",
 		ipv4 = "Not running",
-		ipv6 = nil,
+		ipv6 = "",
 		domain_name = "",
 		peers = {}
 	}
@@ -82,15 +79,15 @@ methods.get_status = function()
 
 		if status_data then
 			data.version = status_data.Version or "Unknown"
-			data.health = status_data.Health or ""
-			data.TUNMode = status_data.TUN or "true"
+			data.health = (status_data.Health and #status_data.Health > 0) and status_data.Health[1] or ""
+			data.TUNMode = status_data.TUN
 
 			if status_data.BackendState == "Running" then data.status = "running" end
 			if status_data.BackendState == "NeedsLogin" then data.status = "logout" end
 
 			if status_data.Self and status_data.Self.TailscaleIPs then
 				data.ipv4 = status_data.Self.TailscaleIPs[1] or "No IP assigned"
-				data.ipv6 = status_data.Self.TailscaleIPs[2]
+				data.ipv6 = status_data.Self.TailscaleIPs[2] or ""
 			end
 
 			if status_data.CurrentTailnet then
@@ -98,7 +95,7 @@ methods.get_status = function()
 			end
 
 			-- 处理 Peers
-			if status_data.Peer then
+			if status_data.Peer and next(status_data.Peer) then
 				for _, p in pairs(status_data.Peer) do
 					local ips = table.concat(p.TailscaleIPs or {}, "<br>")
 					local dns_name = p.DNSName or ""
@@ -127,9 +124,6 @@ methods.get_status = function()
 	return data
 end
 
--- -------------------------------------------------------------------
--- 2. get_settings
--- -------------------------------------------------------------------
 methods.get_settings = function()
 	local settings = {}
 	uci:load("tailscale")
@@ -181,74 +175,6 @@ methods.get_settings = function()
 	return settings
 end
 
--- -------------------------------------------------------------------
--- 3. set_settings
--- -------------------------------------------------------------------
-methods.set_settings = function(form_data)
-	if not form_data or type(form_data) ~= "table" then
-		return { error = "Missing or invalid form_data parameter. Please provide settings data." }
-	end
-
-	local args = { "set" }
-
-	table.insert(args, "--accept-routes=" .. tostring(form_data.accept_routes == "1" or form_data.accept_routes == true))
-	table.insert(args, "--advertise-exit-node=" .. tostring((form_data.advertise_exit_node == "1" or form_data.advertise_exit_node == true) and (form_data.exit_node == "" or not form_data.exit_node)))
-
-	if form_data.exit_node == "" or not form_data.exit_node then
-		table.insert(args, "--exit-node-allow-lan-access=" .. tostring(form_data.exit_node_allow_lan_access == "1" or form_data.exit_node_allow_lan_access == true))
-	end
-
-	table.insert(args, "--ssh=" .. tostring(form_data.ssh == "1" or form_data.ssh == true))
-	table.insert(args, "--accept-dns=" .. tostring(not (form_data.disable_magic_dns == "1" or form_data.disable_magic_dns == true)))
-	table.insert(args, "--shields-up=" .. tostring(form_data.shields_up == "1" or form_data.shields_up == true))
-	table.insert(args, "--webclient=" .. tostring(form_data.runwebclient == "1" or form_data.runwebclient == true))
-	table.insert(args, "--snat-subnet-routes=" .. tostring(not (form_data.nosnat == "1" or form_data.nosnat == true)))
-
-	local adv_routes = ""
-	if type(form_data.advertise_routes) == "table" then
-		adv_routes = table.concat(form_data.advertise_routes, ",")
-	elseif type(form_data.advertise_routes) == "string" then
-		adv_routes = form_data.advertise_routes
-	end
-	table.insert(args, "--advertise-routes " .. (adv_routes ~= "" and shell_quote(adv_routes) or '""'))
-
-	local exit_node = form_data.exit_node or ""
-	table.insert(args, "--exit-node=" .. (exit_node ~= "" and shell_quote(exit_node) or '""'))
-	if exit_node ~= "" then
-		table.insert(args, "--exit-node-allow-lan-access=true")
-	end
-
-	local hostname = form_data.hostname or ""
-	table.insert(args, "--hostname " .. (hostname ~= "" and shell_quote(hostname) or '""'))
-
-	uci:load("tailscale")
-	for k, v in pairs(form_data) do
-		if k:sub(1, 1) ~= "." then
-			uci:set("tailscale", "settings", k, v)
-		end
-	end
-	uci:save("tailscale")
-	uci:commit("tailscale")
-
-	if form_data.enable == "1" then
-		exec("/etc/init.d/tailscale enable")
-		exec("/etc/init.d/tailscale restart")
-		local cmd_array = "tailscale " .. table.concat(args, " ")
-		local set_result = exec(cmd_array)
-		if set_result.code ~= 0 then
-			return { error = "Failed to apply node settings: " .. set_result.stderr }
-		end
-	else
-		exec("/etc/init.d/tailscale stop")
-		exec("/etc/init.d/tailscale disable")
-	end
-
-	return { success = true }
-end
-
--- -------------------------------------------------------------------
--- 4. do_login
--- -------------------------------------------------------------------
 methods.do_login = function(form_data)
 	if not form_data or type(form_data) ~= "table" then
 		return { error = "Missing or invalid form_data parameter. Please provide login data." }
@@ -297,9 +223,6 @@ methods.do_login = function(form_data)
 	return { error = "Could not retrieve login URL from tailscale command after 30 seconds." }
 end
 
--- -------------------------------------------------------------------
--- 5. do_logout
--- -------------------------------------------------------------------
 methods.do_logout = function()
 	--结束旧进程
 	sys.call("busybox top -bn1 | grep -v 'grep' | grep 'tailscale login' | awk '{print $1}' | xargs kill -9 2>/dev/null")
@@ -317,9 +240,6 @@ methods.do_logout = function()
 	return { success = true }
 end
 
--- -------------------------------------------------------------------
--- 6. get_subroutes
--- -------------------------------------------------------------------
 methods.get_subroutes = function()
 	local cmd = "ip -j route"
 	local result = exec(cmd)
@@ -340,9 +260,6 @@ methods.get_subroutes = function()
 	return { routes = subnets }
 end
 
--- -------------------------------------------------------------------
--- 7. setup_firewall
--- -------------------------------------------------------------------
 methods.setup_firewall = function()
 	local ok, err = pcall(function()
 		uci:load("network")

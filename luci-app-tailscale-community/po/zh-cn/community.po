@@ -127,14 +127,6 @@ msgstr "设备列表"
 msgid "Disable Firewall Configuration"
 msgstr "禁用防火墙配置"
 
-#: applications/luci-app-tailscale-community/htdocs/luci-static/resources/view/tailscale.js:27
-msgid "Disable MagicDNS"
-msgstr "禁用 MagicDNS"
-
-#: applications/luci-app-tailscale-community/htdocs/luci-static/resources/view/tailscale.js:27
-msgid "Use system DNS instead of MagicDNS."
-msgstr "使用系统 DNS 而不是 MagicDNS。"
-
 #: applications/luci-app-tailscale-community/htdocs/luci-static/resources/view/tailscale.js:25
 msgid "Disable SNAT"
 msgstr "禁用 SNAT"
@@ -147,7 +139,7 @@ msgstr "为通告路由的流量禁用源地址转换 (SNAT)。大多数用户�
 
 #: applications/luci-app-tailscale-community/htdocs/luci-static/resources/view/tailscale.js:29
 msgid "Disable Tailscale netfilter auto-configuration (--netfilter-mode=off)."
-msgstr ""
+msgstr "禁用 Tailscale netfilter 自动配置 (--netfilter-mode=off)。"
 
 #: applications/luci-app-tailscale-community/htdocs/luci-static/resources/view/tailscale.js:28
 #: applications/luci-app-tailscale-community/htdocs/luci-static/resources/view/tailscale.js:229
