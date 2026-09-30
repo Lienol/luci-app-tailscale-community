@@ -47,18 +47,13 @@ setup_tailscale_dns_forward() {
 
 remove_tailscale_dns_forward() {
 	local entry="/.ts.net/100.100.100.100"
-	local idx=0
 	local removed=0
-	while true; do
-		local val
-		val=$(uci -q get dhcp.@dnsmasq[0].server."${idx}" 2>/dev/null)
-		[ -z "$val" ] && break
+	for val in "$(uci -q get dhcp.@dnsmasq[0].server)"; do
 		if [ "$val" = "$entry" ]; then
 			uci -q del_list dhcp.@dnsmasq[0].server="$entry"
 			removed=1
 			break
 		fi
-		idx=$((idx + 1))
 	done
 
 	if [ "$removed" = "1" ]; then
@@ -216,6 +211,7 @@ handle_service_state() {
 		/etc/init.d/tailscale stop 2>/dev/null
 		/etc/init.d/tailscale disable 2>/dev/null
 		killall tailscaled 2>/dev/null
+		remove_tailscale_dns_forward
 	else
 		logger -t "$NAME" "Service is enabled, ensuring tailscale is running"
 		/etc/init.d/tailscale enable 2>/dev/null
