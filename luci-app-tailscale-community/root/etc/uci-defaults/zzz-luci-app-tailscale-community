@@ -1,6 +1,6 @@
 #!/bin/sh
 
-tailscale_enable=$(uci -q get tailscale.settings.enable || echo 1)
+tailscale_enable=$(uci -q get tailscale.settings.service_enabled || echo 1)
 [ "${tailscale_enable}" == "0" ] && {
 	/etc/init.d/tailscale stop
 	/etc/init.d/tailscale disable

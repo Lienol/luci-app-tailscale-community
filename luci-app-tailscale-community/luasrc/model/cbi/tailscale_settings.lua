@@ -13,7 +13,7 @@ s:tab("general", translate("General Settings"))
 s:tab("account", translate("Account Settings"))
 
 -- --- General 选项卡 ---
-o = s:taboption("general", Flag, "enable", translate("Enable"))
+o = s:taboption("general", Flag, "service_enabled", translate("Enable"))
 o.rmempty = false
 
 o = s:taboption("general", ListValue, "fw_mode", translate("Firewall Mode"), translate("Select the firewall backend for Tailscale to use. Requires service restart to take effect."))
@@ -43,8 +43,23 @@ o.rmempty = false
 o = s:taboption("general", Flag, "ssh", translate("Enable Tailscale SSH"), translate("Allow connecting to this device through the SSH function of Tailscale."))
 o.rmempty = false
 
-o = s:taboption("general", Flag, "disable_magic_dns", translate("Disable MagicDNS"), translate("Use system DNS instead of MagicDNS."))
+o = s:taboption("general", ListValue, "dns_mode", translate("DNS Mode"), translate("Controls how Tailscale DNS is handled."))
+o:value("disabled", translate("Disabled"))
+o:value("magicdns", translate("MagicDNS"))
+o:value("openwrt_forward", translate("OpenWrt Forward"))
 o.rmempty = false
+
+o = s:taboption("general", Flag, "disable_fw_config", translate("Disable Firewall Configuration"), translate("Disable Tailscale netfilter auto-configuration (--netfilter-mode=off)."))
+o.rmempty = false
+
+o = s:taboption("general", Flag, "enable_relay", translate("Enable Peer Relay"), translate("Enable this device as a Peer Relay server. Requires a public IP and an UDP port open on the router."))
+o.rmempty = false
+
+o = s:taboption("general", Value, "relay_server_port", translate("Peer Relay Port"), translate("UDP port for the Peer Relay service. Open this port on your router firewall/NAT."))
+o.datatype = "port"
+o.placeholder = "40000"
+o.rmempty = false
+o:depends("enable_relay", "1")
 
 -- Exit Node 节点选择（动态调 ubus 获取 peer 节点）
 o = s:taboption("general", ListValue, "exit_node", translate("Exit Node"), translate("Select an exit node from the list. If enabled, Allow LAN Access is enabled implicitly."))
@@ -149,8 +164,8 @@ end
 -- 3. 保存并应用时的同步逻辑
 -- ==========================================
 m.on_after_commit = function(self)
-	local data = self:get("settings") or {}
-	local res = tailscale.set_settings(data)
+	local sys = require "luci.sys"
+	sys.call("/etc/init.d/tailscale-settings reload")
 end
 
 return m
