@@ -126,6 +126,10 @@ local str = ""
 
 
 -- --- Account 选项卡 ---
+o = s:taboption("account", Value, "state_file", translate("State File"))
+o.default = "/etc/tailscale/tailscaled.state"
+o.rmempty = false
+
 if status_raw.status == "logout" then
 	o = s:taboption("account", Button, "_login", translate("Login"), translate("Click to get a login URL for this device.") .. "<br>" .. translate("If the timeout is displayed, you can refresh the page and click Login again."))
 	o.inputstyle = "apply"

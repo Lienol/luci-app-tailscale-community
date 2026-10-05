@@ -596,3 +596,6 @@ msgstr "並啟用地址偽裝和 MSS鉗制確保連線穩定。"
 
 #~ msgid "Tailscale settings applied successfully."
 #~ msgstr "Tailscale 設定已成功套用。"
+
+msgid "State File"
+msgstr "狀態文件"

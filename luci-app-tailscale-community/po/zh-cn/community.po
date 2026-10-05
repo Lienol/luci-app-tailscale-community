@@ -598,3 +598,6 @@ msgstr "并启用伪装和MSS钳制（MTU修复）功能，以确保连接稳定
 
 #~ msgid "Tailscale settings applied successfully."
 #~ msgstr "Tailscale 设置已成功应用。"
+
+msgid "State File"
+msgstr "状态文件"
