@@ -53,7 +53,6 @@ methods.get_status = function()
 		health = "",
 		ipv4 = "Not running",
 		ipv6 = "",
-		domain_name = "",
 		peers = {}
 	}
 
@@ -88,10 +87,6 @@ methods.get_status = function()
 			if status_data.Self and status_data.Self.TailscaleIPs then
 				data.ipv4 = status_data.Self.TailscaleIPs[1] or "No IP assigned"
 				data.ipv6 = status_data.Self.TailscaleIPs[2] or ""
-			end
-
-			if status_data.CurrentTailnet then
-				data.domain_name = status_data.CurrentTailnet.Name or ""
 			end
 
 			-- 处理 Peers

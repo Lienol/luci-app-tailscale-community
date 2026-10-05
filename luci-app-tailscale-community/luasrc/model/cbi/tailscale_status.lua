@@ -23,9 +23,6 @@ if data.status == "running" then
 	o = s:option(DummyValue, "_ipv6", translate("Tailscale IPv6"))
 	o.value = data.ipv6 or translate("N/A")
 
-	o = s:option(DummyValue, "_domain", translate("Tailnet Name"))
-	o.value = data.domain_name
-
 	if next(data.peers) then
 		s_peers = m:section(Table, "peers", "")
 		s_peers.anonymous = true
@@ -68,6 +65,7 @@ if data.status == "running" then
 			return peer.origin.OS
 		end
 
+		--[[
 		local connection_col = s_peers:option(DummyValue, "connection", translate("Connection Info"))
 		connection_col.rawhtml = true
 		connection_col.value = function(self, section, value)
@@ -76,33 +74,56 @@ if data.status == "running" then
 				return translate("N/A")
 			end
 
-			local conn_info = peer.origin.ConnectionInfo or "-"
+			local linkadress = peer.linkadress or "-"
+			if type(linkadress) == "string" and #linkadress == 3 then
+				linkadress = linkadress:lower()
+			end
 
-			if conn_info:match("direct") then
-				return ('<span style="color:green;" title="%s">%s</span>'):format(conn_info, translate("Direct"))
-			elseif conn_info:match("relay") then
-				local relay_node = conn_info:match("%((%S+)%)")
+			if linkadress:match("direct") then
+				return ('<span style="color:green;" title="%s">%s</span>'):format(linkadress, translate("Direct"))
+			elseif linkadress:match("relay") then
+				local relay_node = linkadress:match("%((%S+)%)")
 				local display_text = relay_node and ("Relay (%s)"):format(relay_node) or translate("Relay")
-				return ('<span style="color:orange;" title="%s">%s</span>'):format(conn_info, display_text)
-			elseif conn_info == "-" then
+				return ('<span style="color:orange;" title="%s">%s</span>'):format(linkadress, display_text)
+			elseif linkadress == "-" then
 				return translate("ONLINE BUT UNKNOWN")
-			elseif conn_info:match("^idle") then
-				return ('<span style="color:blue;" title="%s">%s</span>'):format(conn_info, translate("Idle"))
+			elseif linkadress:match("^idle") then
+				return ('<span style="color:blue;" title="%s">%s</span>'):format(linkadress, translate("Idle"))
 			else
-				return conn_info
+				return linkadress
+			end
+		end
+		]]--
+
+		function formatBytes(bytes)
+			if not bytes or bytes < 0 then
+				return "0"
+			end
+			bytes = tonumber(bytes)
+
+			local units = {"B", "KB", "MB", "GB"}
+			local index = 1
+
+			while bytes >= 1024 and index < #units do
+				bytes = bytes / 1024
+				index = index + 1
+			end
+
+			if index == 1 then
+				return string.format("%d %s", bytes, units[index])
+			else
+				return string.format("%.2f %s", bytes, units[index])
 			end
 		end
 
 		local rx_col = s_peers:option(DummyValue, "rx", translate("RX"))
 		rx_col.value = function(self, section, value)
-			local peer = data.peers[section]
-			return peer.origin.RxBytes or "-"
+			return formatBytes(data.peers[section].origin.RxBytes)
 		end
 
 		local tx_col = s_peers:option(DummyValue, "tx", translate("TX"))
 		tx_col.value = function(self, section, value)
-			local peer = data.peers[section]
-			return peer.origin.TxBytes or "-"
+			return formatBytes(data.peers[section].origin.TxBytes)
 		end
 
 		local function format_last_seen(timestr)
